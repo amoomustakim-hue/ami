@@ -1,0 +1,15 @@
+{
+  "count": 151,
+  "width": 832,
+  "height": 978,
+  "aspect": 0.850716,
+  "tiers": {
+    "desktop": {
+      "width": 832
+    },
+    "mobile": {
+      "width": 624
+    }
+  },
+  "poster": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAABwBQCdASogACYAPtFao0woJSMiMBVaqQAaCWUAv+wLMwUFuAW9zuI6L+5x3m/yCbXRLiYAAN4RiPMPkSJUH9hSsdA8vu+Czqdysh+7t9Isr1adiatn/YAY/lqSWDAeeXWpgswmn7+hO6/zlzTZle+UDmqwyqALXdS1/lpEHJejfwXUulyAAAAA"
+}

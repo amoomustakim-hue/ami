@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   ami — palette sampled from the boutique walkthrough:
+   olive facade, natural oak, warm ivory stone, muted charcoal.
+   --------------------------------------------------------------- */
+@theme {
+  --color-ivory: #f4efe5;
+  --color-warm-white: #fcfaf5;
+  --color-beige: #e6dbc9;
+  --color-sand: #d5c5ad;
+  --color-wood: #c3a382;
+  --color-wood-deep: #94724f;
+  --color-olive: #6a6d56;
+  --color-olive-deep: #4a4e3c;
+  --color-charcoal: #26241f;
+  --color-ink: #17150f;
+
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-cinema: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    /* Lenis drives scrolling; native smooth-scroll would fight it. */
+    scroll-behavior: auto;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-ivory);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+
+  /* Never allow a stray transform to open a horizontal scrollbar. */
+  html,
+  body {
+    max-width: 100%;
+  }
+
+  ::selection {
+    background: var(--color-olive);
+    color: var(--color-warm-white);
+  }
+}
+
+@layer utilities {
+  /* Small uppercase labels — the connective tissue of the whole layout. */
+  .label {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 400;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+  }
+
+  @media (min-width: 768px) {
+    .label {
+      font-size: 0.75rem;
+    }
+  }
+
+  .label-tight {
+    letter-spacing: 0.18em;
+  }
+
+  /* Oversized editorial display sizes, fluid across the whole range. */
+  .display-xl {
+    font-size: clamp(3.75rem, 17vw, 16rem);
+    line-height: 0.84;
+    letter-spacing: -0.03em;
+  }
+
+  .display-lg {
+    font-size: clamp(2.75rem, 9vw, 8.5rem);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+  }
+
+  .display-md {
+    font-size: clamp(2rem, 5.5vw, 4.75rem);
+    line-height: 1.02;
+    letter-spacing: -0.015em;
+  }
+
+  .display-sm {
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .measure {
+    max-width: 34ch;
+  }
+
+  /* Hairline rules — used constantly instead of boxes/cards. */
+  .rule {
+    border-color: color-mix(in srgb, var(--color-ivory) 16%, transparent);
+  }
+
+  .rule-dark {
+    border-color: color-mix(in srgb, var(--color-ink) 14%, transparent);
+  }
+}
+
+/* Reveal primitives. GSAP sets the final state; these are the at-rest values
+   so nothing flashes before hydration. */
+[data-reveal] {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+[data-reveal-line] {
+  display: block;
+  overflow: hidden;
+}
+
+[data-reveal-line] > span {
+  display: block;
+  will-change: transform;
+}
+
+/* The custom cursor replaces the pointer only where it is actually useful. */
+@media (hover: hover) and (pointer: fine) {
+  .cursor-none-fine {
+    cursor: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-reveal-line] > span {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes drop {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+
+/* Indeterminate track, used until the first frame reports in. Pure CSS so it
+   is moving before the bundle has booted. */
+@keyframes sweep {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}

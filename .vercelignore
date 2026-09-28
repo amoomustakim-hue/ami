@@ -1,0 +1,7 @@
+node_modules
+.next
+out
+
+# Source footage. The site serves the encoded sequence in public/frames/,
+# which is committed; these originals are only needed to re-run `npm run frames`.
+ezgif-7c37c7cc4726c02e-jpg
