@@ -41,11 +41,11 @@ export function CinemaCanvas({ filmId }: { filmId: string }) {
       const raw = Math.min(window.devicePixelRatio || 1, isMobile ? 1.75 : 2);
 
       /*
-        The source frame is 832px wide. Once the viewport is wider than that the
-        image is being upscaled anyway, and rendering at 2× device pixels buys
-        no detail whatsoever — it just triples the per-frame cost of a scrub
-        that has to stay at 60fps. Cap the backing store at a sensible multiple
-        of the source and never go below 1×.
+        The encoded frame is FRAME_WIDTH wide (1440px from the AI-upscaled
+        masters). Past that the image is being enlarged anyway, and rendering
+        at 2× device pixels buys no detail — it just raises the per-frame cost
+        of a scrub that has to stay at 60fps. Cap the backing store at a
+        sensible multiple of the frame and never go below 1×.
       */
       const ceiling = (FRAME_WIDTH * 1.6) / rect.width;
       const dpr = Math.min(raw, Math.max(1, ceiling));

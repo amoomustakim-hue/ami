@@ -1,8 +1,23 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { Bottle } from "../Bottle";
+import type { BottleMotion } from "../GlassBottle";
+
+// three.js only ships to the screens that render it, and only when needed.
+const GlassBottle = dynamic(() => import("../GlassBottle"), { ssr: false });
+
+/** Real-time glass on large screens with motion and WebGL; the drawing everywhere else. */
+function canRenderGlass() {
+  if (!window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)").matches) return false;
+  try {
+    return !!document.createElement("canvas").getContext("webgl2");
+  } catch {
+    return false;
+  }
+}
 import { Magnetic } from "../Magnetic";
 import { FLAGSHIP } from "@/lib/data";
 import { useExperience } from "../Experience";
@@ -26,6 +41,11 @@ export function TheBottle() {
   const rootRef = useRef<HTMLDivElement>(null);
   const { revealed } = useExperience();
   const stackRef = useReveal<HTMLDivElement>({ enabled: revealed, start: "top 85%" });
+  const [motion] = useState<BottleMotion>(() => ({ turn: 0 }));
+  const [glass, setGlass] = useState(false);
+  const [glassReady, setGlassReady] = useState(false);
+
+  useEffect(() => setGlass(canRenderGlass()), []);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -58,6 +78,8 @@ export function TheBottle() {
         { scale: 1.14, y: -18, duration: 1 },
         0
       );
+      // …and turns in the light (read by the glass flacon every frame).
+      tl.fromTo(motion, { turn: 0 }, { turn: 1, duration: 1 }, 0);
 
       // Ground shifts from near-black to the house olive.
       tl.fromTo(
@@ -124,8 +146,26 @@ export function TheBottle() {
                 variant="wide"
                 tone={FLAGSHIP.tone}
                 mark={FLAGSHIP.mark}
-                className="h-[40svh] w-auto text-ivory md:h-[46svh]"
+                className={[
+                  "h-[40svh] w-auto text-ivory transition-opacity duration-700 md:h-[46svh]",
+                  glassReady ? "opacity-0" : "opacity-100",
+                ].join(" ")}
               />
+              {glass && (
+                <span
+                  className={[
+                    "absolute top-1/2 left-1/2 h-[64svh] w-[64svh] -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000",
+                    glassReady ? "opacity-100" : "opacity-0",
+                  ].join(" ")}
+                >
+                  <GlassBottle
+                    tone={FLAGSHIP.tone}
+                    mark={FLAGSHIP.mark}
+                    motion={motion}
+                    onReady={() => setGlassReady(true)}
+                  />
+                </span>
+              )}
             </span>
 
             <div
