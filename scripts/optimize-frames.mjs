@@ -6,6 +6,10 @@
  * it is re-encoded. The crop is uniform across the sequence, which keeps the
  * camera move perfectly stable while scrubbing.
  *
+ * If scripts/ai-upscale.py has produced frames-master/ (Real-ESRGAN, already
+ * cropped, 1664 px wide), those are used instead: they carry restored detail,
+ * so the ladders can go well past the 832 px source.
+ *
  * Outputs two WebP ladders — one for desktop, one for narrow viewports — plus a
  * tiny blurred poster used for the first paint behind the preloader.
  */
@@ -13,29 +17,44 @@ import sharp from "sharp";
 import { mkdir, readdir, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
 
-const SRC_DIR = path.join(process.cwd(), "ezgif-7c37c7cc4726c02e-jpg");
+const RAW_DIR = path.join(process.cwd(), "ezgif-7c37c7cc4726c02e-jpg");
+const MASTER_DIR = path.join(process.cwd(), "frames-master");
 const OUT_DIR = path.join(process.cwd(), "public", "frames");
 
 // Watermark bands, in source pixels (source frames are 832 x 1120).
 const CROP_TOP = 58;
 const CROP_BOTTOM = 84;
 
-const LADDER = [
+// Raw frames: nothing to gain above their native 832 px.
+const RAW_LADDER = [
   { name: "desktop", width: 832, quality: 74 },
   { name: "mobile", width: 624, quality: 70 },
 ];
+// AI masters: sharp enough to fill a 1440 px screen, and a 2x phone.
+const MASTER_LADDER = [
+  { name: "desktop", width: 1440, quality: 78 },
+  { name: "mobile", width: 828, quality: 74 },
+];
+
+const list = async (dir, pattern) =>
+  (await readdir(dir).catch(() => [])).filter((f) => pattern.test(f)).sort();
 
 async function main() {
-  const files = (await readdir(SRC_DIR))
-    .filter((f) => /\.jpe?g$/i.test(f))
-    .sort();
-
-  if (!files.length) throw new Error(`No source frames found in ${SRC_DIR}`);
+  const raw = await list(RAW_DIR, /\.jpe?g$/i);
+  if (!raw.length) throw new Error(`No source frames found in ${RAW_DIR}`);
+  const masters = await list(MASTER_DIR, /\.webp$/i);
+  // Only use the masters once every frame has one.
+  const useMasters = masters.length === raw.length;
+  const SRC_DIR = useMasters ? MASTER_DIR : RAW_DIR;
+  const files = useMasters ? masters : raw;
+  const LADDER = useMasters ? MASTER_LADDER : RAW_LADDER;
 
   const probe = await sharp(path.join(SRC_DIR, files[0])).metadata();
-  const cropHeight = probe.height - CROP_TOP - CROP_BOTTOM;
+  // Masters are already cropped.
+  const top = useMasters ? 0 : CROP_TOP;
+  const cropHeight = probe.height - (useMasters ? 0 : CROP_TOP + CROP_BOTTOM);
   console.log(
-    `source ${probe.width}x${probe.height} -> cropped ${probe.width}x${cropHeight} (${files.length} frames)`
+    `${useMasters ? "AI masters" : "raw frames"} ${probe.width}x${probe.height} -> ${probe.width}x${cropHeight} (${files.length} frames)`
   );
 
   await rm(OUT_DIR, { recursive: true, force: true });
@@ -50,12 +69,11 @@ async function main() {
     for (const tier of LADDER) {
       const out = path.join(OUT_DIR, tier.name, `${index}.webp`);
       const info = await sharp(src)
-        .extract({ left: 0, top: CROP_TOP, width: probe.width, height: cropHeight })
-        .resize({ width: tier.width, withoutEnlargement: true })
-        // The frame is drawn edge-to-edge, so on a wide screen it is upscaled
-        // well beyond its native width. A light unsharp pass gives that upscale
-        // something to hold on to; anything stronger haloes the soft lighting.
-        .sharpen({ sigma: 0.6, m1: 0.4, m2: 0.7 })
+        .extract({ left: 0, top, width: probe.width, height: cropHeight })
+        .resize({ width: tier.width, withoutEnlargement: true, kernel: "lanczos3" })
+        // A light unsharp pass for the downscale; anything stronger haloes the
+        // soft lighting. The raw frames need a touch more to survive upscaling.
+        .sharpen(useMasters ? { sigma: 0.45, m1: 0.3, m2: 0.4 } : { sigma: 0.6, m1: 0.4, m2: 0.7 })
         .webp({ quality: tier.quality, effort: 6 })
         .toFile(out);
       bytes[tier.name] += info.size;
@@ -68,7 +86,7 @@ async function main() {
 
   // Blurred poster: shown instantly while the sequence streams in.
   const poster = await sharp(path.join(SRC_DIR, files[0]))
-    .extract({ left: 0, top: CROP_TOP, width: probe.width, height: cropHeight })
+    .extract({ left: 0, top, width: probe.width, height: cropHeight })
     .resize({ width: 32 })
     .blur(2)
     .webp({ quality: 50 })

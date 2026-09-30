@@ -1,15 +1,15 @@
 {
   "count": 151,
-  "width": 832,
-  "height": 978,
+  "width": 1664,
+  "height": 1956,
   "aspect": 0.850716,
   "tiers": {
     "desktop": {
-      "width": 832
+      "width": 1440
     },
     "mobile": {
-      "width": 624
+      "width": 828
     }
   },
-  "poster": "data:image/webp;base64,UklGRpQAAABXRUJQVlA4IIgAAABwBQCdASogACYAPtFao0woJSMiMBVaqQAaCWUAv+wLMwUFuAW9zuI6L+5x3m/yCbXRLiYAAN4RiPMPkSJUH9hSsdA8vu+Czqdysh+7t9Isr1adiatn/YAY/lqSWDAeeXWpgswmn7+hO6/zlzTZle+UDmqwyqALXdS1/lpEHJejfwXUulyAAAAA"
+  "poster": "data:image/webp;base64,UklGRpYAAABXRUJQVlA4IIoAAACQBQCdASogACYAPtFao0yoJSMiMBVaqQAaCWUAuwALM27ZR6ZOskRsqSHsnZ4kMz0sYaFcYADeEYjzJ6wRKfoT24z6gRDf2ofarsC4eeQqWSYeKjViUXoX5ilYmyg3898/8pHhgLeYLvD+IDx4kIZvfRDNN8m7kkXIn4quhsnU0kRUhB0BuMAAAAA="
 }

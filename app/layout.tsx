@@ -22,7 +22,13 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ami.house"),
+  // Absolute URLs for the social card: the production domain on Vercel,
+  // localhost in development.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3000"
+  ),
   title: {
     default: "ami — The Art of Scent",
     template: "%s · ami",
@@ -34,6 +40,12 @@ export const metadata: Metadata = {
     description:
       "An intimate world of scent, crafted for those who leave an impression.",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ami — The Art of Scent",
+    description:
+      "An intimate world of scent, crafted for those who leave an impression.",
   },
 };
 
@@ -91,7 +103,11 @@ export default function RootLayout({
           );
         })}
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        {/* Film grain over everything: the footage and the flat grounds read as one print. */}
+        <div aria-hidden="true" className="grain" />
+      </body>
     </html>
   );
 }

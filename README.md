@@ -14,7 +14,7 @@ ScrollTrigger · Lenis · sharp (build-time image pipeline).
 
 ```bash
 npm install
-npm run frames   # build the frame sequence from the source JPEGs (run once)
+npm run frames   # build the frame sequence (from frames-master/ if present)
 npm run dev
 ```
 
@@ -29,13 +29,31 @@ npm run build && npm start
 
 ## The asset pipeline
 
-`scripts/optimize-frames.mjs` turns 151 source JPEGs (832 × 1120) into two WebP
-ladders:
+The source is 151 JPEGs at 832 × 1120, heavily compressed (~32 KB each). The
+film is drawn edge to edge, so on a desktop screen it is enlarged 2–3× — plain
+resampling only enlarges the blocking.
 
-| tier    | width | total    | used for        |
-| ------- | ----- | -------- | --------------- |
-| desktop | 832px | ~5.3 MB  | ≥ 768px         |
-| mobile  | 624px | ~3.6 MB  | < 768px         |
+**1. AI upscale (once).** `scripts/ai-upscale.py` crops the watermarks and runs
+every frame through Real-ESRGAN (`realesr-general-x4v3`), which is trained on
+exactly this kind of compression damage. The result, resampled to 1664 px, is
+committed in `frames-master/`.
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install torch numpy pillow
+curl -LO https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth
+.venv/bin/python scripts/ai-upscale.py realesr-general-x4v3.pth   # ~20 s/frame on CPU, resumable
+```
+
+**2. Web ladders.** `scripts/optimize-frames.mjs` turns the masters into two
+WebP ladders:
+
+| tier    | width  | used for |
+| ------- | ------ | -------- |
+| desktop | 1440px | ≥ 768px  |
+| mobile  | 828px  | < 768px  |
+
+Without `frames-master/` it falls back to the raw frames at their native
+832 / 624 px.
 
 Two things happen during encoding:
 
@@ -84,13 +102,12 @@ drift also reads as a natural camera tilt as you walk in. On phones the viewport
 is narrower than the frame, so cover crops the sides instead and `focusY` has
 no effect.
 
-**Resolution ceiling.** 832px is all the detail the asset has, so on a wide
-screen it is upscaled ~2.3×. Two mitigations: the encoder applies a light
-unsharp pass, and the canvas backing store is capped at `FRAME_WIDTH * 1.6`
-rather than blindly following `devicePixelRatio` — rendering a 2.3× upscale at
-2× DPR costs three times as much per frame and buys nothing. If you ever get a
-higher-resolution or landscape master, drop it into the source folder and
-re-run `npm run frames`; nothing else needs to change.
+**Resolution ceiling.** The AI masters give the desktop ladder real detail up
+to 1440 px. The canvas backing store is capped at `FRAME_WIDTH * 1.6` rather
+than blindly following `devicePixelRatio` — rendering past the frame's own
+detail costs per-frame time and buys nothing. If you ever get a
+higher-resolution or landscape master, drop it into the source folder, re-run
+both steps, and nothing else needs to change.
 
 ### The grade
 
@@ -99,6 +116,20 @@ dimming the footage wastes the asset. So the film timeline animates a **focused
 radial scrim** and a **rack-focus blur** on the canvas: the set dims and softens
 as a statement arrives, and opens back up while the camera travels. Values live
 in one place (`grade()` in `FilmStage.tsx`).
+
+## After the film
+
+- **The four beats** (`ScentStory`) each pair a line with a close crop of the
+  walkthrough — the sign, the arches, the ring light, the table — so the same
+  room reads as four photographs. Stills open like a shutter and drift inside
+  their frame.
+- **The flagship** (`TheBottle`) is real-time 3D on large screens
+  (`GlassBottle`, three.js via React Three Fiber, loaded on demand): layered
+  glass over amber liquid, a cap in the scent's tone, the etched label. Scroll
+  turns it, the cursor leans it, and it only renders while on screen. Phones,
+  reduced motion and browsers without WebGL 2 keep the vector flacon.
+- **Grain**: a soft-light film grain over the whole page ties the footage and
+  the flat grounds together.
 
 ## Loading
 
